@@ -14,8 +14,7 @@ class EasyDarfBusiness(SpiderLoginInterface):
     first_store = None
 
     async def consult_stores(self):
-        response = await self.make_session_request(
-            method="GET",
+        response = await self.session(
             headers=self.spider_headers,
             url=SPIDERS_SETTINGS['instacart']['STORES_URL']
         )
@@ -27,8 +26,7 @@ class EasyDarfBusiness(SpiderLoginInterface):
         self.spider_headers['cookie'] = SPIDERS_SETTINGS["instacart"]["STORE_COOKIE"]
 
         url = SPIDERS_SETTINGS['instacart']['SPECIFIC_STORE'](self.first_store)
-        response = await self.make_session_request(
-            method="GET",
+        response = await self.session(
             headers=self.spider_headers,
             url=url
         )
@@ -45,8 +43,7 @@ class EasyDarfBusiness(SpiderLoginInterface):
         clean_store_name = remove_special_chars(store_name)
         url = SPIDERS_SETTINGS["instacart"]["LINK_PATHS"](clean_store_name)
 
-        response = await self.make_session_request(
-            method="GET",
+        response = await self.session(
             headers=self.spider_headers,
             url=url
         )

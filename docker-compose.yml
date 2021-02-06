@@ -1,0 +1,47 @@
+version: '3.6'
+
+services:
+
+  easydarf:
+    build:
+      context: .
+    env_file:
+      - .env
+    image: easydarf:local
+    command: watchmedo auto-restart -p "*.py" -d /opt/easydarf/ -R -- python main.py
+    ports:
+      - 8080:8080
+    volumes:
+      - .:/opt/easydarf:rw
+      - ~/.aws:/root/.aws
+    networks:
+      - easydarf-grp-net
+      - easydarf-net
+    depends_on:
+      - redis
+
+  redis:
+    image: redis:5.0
+    volumes:
+      - redis-data:/data
+    networks:
+      - easydarf-net
+
+  splash:
+    image: scrapinghub/splash:latest
+    command: --max-timeout 150 --maxrss 450 --slots 5 --verbosity 4 --js-cross-domain-access --disable-private-mode --browser-engines=webkit --allowed-schemes=http,https
+    networks:
+      - easydarf-net
+    volumes:
+      - ./custom_filters:/etc/splash/filters
+    ports:
+      - 11050:8050
+
+networks:
+  easydarf-net:
+    name: easydarf-net
+  easydarf-grp-net:
+    external: true
+
+volumes:
+  redis-data: {}
