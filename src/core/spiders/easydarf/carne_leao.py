@@ -160,6 +160,21 @@ class EasyDarfCarneLeao(RequestHandler):
             }
         )
 
+    async def go_to_compensacao(self):
+        _ = await self.session(
+            url=(
+                f'https://www3.cav.receita.fazenda.gov.br/carneleao/'
+                f'api/demonstrativo/compensacao/impostoPagoExterior/'
+                f'{self.context["current_year"]}/valorCompensacao'
+            ),
+            headers={
+                'Authorization': self.context['authorization']
+            },
+            cookies={
+                'COOKIECAV': self.context['pos_login_cookies']['COOKIECAV']
+            }
+        )
+
     async def create_new_yield(self):
         await self.got_to_demonstrativo_a()
         await self.go_to_graphql(
@@ -192,6 +207,21 @@ class EasyDarfCarneLeao(RequestHandler):
         GRAPHQL['parametro']['arg']['tipoParametro'] = (
             "pagamento-ordenacao-demonstrativo"
         )
+        await self.go_to_graphql(
+            GRAPHQL['parametro']['query'],
+            GRAPHQL['parametro']['arg']
+        )
+        await self.go_to_compensacao()
+        await self.go_to_user_id(1)
+
+        GRAPHQL['parametro']['arg']['tipoParametro'] = "ajuda"
+        await self.go_to_graphql(
+            GRAPHQL['parametro']['query'],
+            GRAPHQL['parametro']['arg']
+        )
+        await self.go_to_user_id(1)
+
+        GRAPHQL['parametro']['arg']['tipoParametro'] = "ocupacao-rendimento"
         await self.go_to_graphql(
             GRAPHQL['parametro']['query'],
             GRAPHQL['parametro']['arg']
