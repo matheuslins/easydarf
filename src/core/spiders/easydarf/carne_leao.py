@@ -3,7 +3,7 @@ from datetime import datetime, timedelta
 from src.core.request import RequestHandler
 from src.utils.extract import extract_current_year, extract_user_data
 from src.core.logging import log
-from src.settings import GRAPHQL
+from src.settings import GRAPHQL, RENDIMENTOS_POR_INDICADOR
 
 
 class EasyDarfCarneLeao(RequestHandler):
@@ -155,7 +155,7 @@ class EasyDarfCarneLeao(RequestHandler):
                 "query": query,
                 "variables": {
                     "exercicio": int(self.context['current_year']),
-                    **{type_arg}
+                    **type_arg
                 }
             }
         )
@@ -166,6 +166,21 @@ class EasyDarfCarneLeao(RequestHandler):
                 f'https://www3.cav.receita.fazenda.gov.br/carneleao/'
                 f'api/demonstrativo/compensacao/impostoPagoExterior/'
                 f'{self.context["current_year"]}/valorCompensacao'
+            ),
+            headers={
+                'Authorization': self.context['authorization']
+            },
+            cookies={
+                'COOKIECAV': self.context['pos_login_cookies']['COOKIECAV']
+            }
+        )
+
+    async def got_to_demonstrativo_by_id(self):
+        _ = await self.session(
+            url=(
+                f'https://www3.cav.receita.fazenda.gov.br/'
+                f'carneleao/api/demonstrativo/rendimento?'
+                f'idDemonstrativo={self.context["user_data"]["id"]}'
             ),
             headers={
                 'Authorization': self.context['authorization']
@@ -192,10 +207,14 @@ class EasyDarfCarneLeao(RequestHandler):
             GRAPHQL['dominio']['query'],
             GRAPHQL['dominio']['arg']
         )
-        GRAPHQL['parametro']['arg']['tipoParametro'] = "pagamentos"
         await self.go_to_graphql(
             GRAPHQL['parametro']['query'],
             GRAPHQL['parametro']['arg']
+        )
+        GRAPHQL['parametro']['arg']['tipoParametro'] = "pagamentos"
+        await self.go_to_graphql(
+            GRAPHQL['dominio']['query'],
+            GRAPHQL['dominio']['arg']
         )
         GRAPHQL['parametro']['arg']['tipoParametro'] = (
             "rendimento-ordenacao-demonstrativo"
@@ -225,6 +244,65 @@ class EasyDarfCarneLeao(RequestHandler):
         await self.go_to_graphql(
             GRAPHQL['parametro']['query'],
             GRAPHQL['parametro']['arg']
+        )
+
+        GRAPHQL['parametro']['arg']['tipoParametro'] = "rendimentos"
+        await self.go_to_graphql(
+            GRAPHQL['parametro']['query'],
+            GRAPHQL['parametro']['arg']
+        )
+
+        GRAPHQL['dominio']['query'] = RENDIMENTOS_POR_INDICADOR
+        await self.go_to_graphql(
+            GRAPHQL['parametro']['query'],
+            GRAPHQL['parametro']['arg']
+        )
+
+        await self.got_to_demonstrativo_by_id()
+        await self.go_to_user_id(1)
+
+        GRAPHQL['parametro']['arg']['tipoParametro'] = "ajuda"
+        await self.go_to_graphql(
+            GRAPHQL['parametro']['query'],
+            GRAPHQL['parametro']['arg']
+        )
+
+        GRAPHQL['parametro']['arg']['tipoParametro'] = (
+            "rendimento-exibir-campos"
+        )
+        await self.go_to_graphql(
+            GRAPHQL['parametro']['query'],
+            GRAPHQL['parametro']['arg']
+        )
+
+        GRAPHQL['parametro']['arg']['tipoParametro'] = (
+            "obrigatoriedade-cpf-ocupacao"
+        )
+        await self.go_to_graphql(
+            GRAPHQL['parametro']['query'],
+            GRAPHQL['parametro']['arg']
+        )
+
+        GRAPHQL['parametro']['arg']['tipoParametro'] = (
+            "obrigatoriedade-cpf"
+        )
+        await self.go_to_graphql(
+            GRAPHQL['parametro']['query'],
+            GRAPHQL['parametro']['arg']
+        )
+
+        GRAPHQL['parametro']['arg']['tipoParametro'] = (
+            "obrigatoriedade-cnpj"
+        )
+        await self.go_to_graphql(
+            GRAPHQL['parametro']['query'],
+            GRAPHQL['parametro']['arg']
+        )
+
+        GRAPHQL['dominio']['query'] = RENDIMENTOS_POR_INDICADOR
+        await self.go_to_graphql(
+            GRAPHQL['dominio']['query'],
+            GRAPHQL['dominio']['arg']
         )
 
         yield_created = {}

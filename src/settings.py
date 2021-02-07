@@ -26,10 +26,10 @@ SPIDERS_SETTINGS = {
 GRAPHQL = {
     'parametro': {
         'query': (
-                "query ($exercicio: Int!, $tipoParametro: String!) "
-                "{\n  parametro(exercicio: $exercicio, tipoParametro: "
-                "$tipoParametro) {\n    conteudo\n    __typename\n  }\n}\n"
-            ),
+            "query ($exercicio: Int!, $tipoParametro: String!) "
+            "{\n  parametro(exercicio: $exercicio, tipoParametro: "
+            "$tipoParametro) {\n    conteudo\n    __typename\n  }\n}\n"
+        ),
         'arg': {
             "tipoParametro": "ajuda"
         }
@@ -45,3 +45,11 @@ GRAPHQL = {
         }
     }
 }
+
+RENDIMENTOS_POR_INDICADOR = (
+    "query ($exercicio: Int!, $tipoDominio: String!) {\n  "
+    "dominio(exercicio: $exercicio, tipoDominio: $tipoDominio) "
+    "{\n    rendimentosPorIndicadorRendimentoTrabalho(anoExercicio: "
+    "$exercicio, indicador:\"N\") {\n      nodes\n      __typename\n "
+    "   }\n    __typename\n  }\n}\n"
+)
