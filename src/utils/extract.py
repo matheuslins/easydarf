@@ -1,3 +1,4 @@
+import json
 from re import search
 
 from scrapy import Selector
@@ -20,3 +21,11 @@ def extract_imposto_renda_url(response) -> str:
     return selector.xpath(
         '//ul[@class="lista-destaque"]//li//a/@href'
     ).extract_first()
+
+
+def extract_current_year(response) -> str:
+    return search(r'(\d+)', response).group(1)
+
+
+def extract_user_data(response) -> dict:
+    return json.loads(response)

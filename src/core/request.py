@@ -6,6 +6,7 @@ from src.core.logging import log
 class RequestHandler:
     headers = {}
     cookies = {}
+    context = {}
     __response = None
 
     def __init__(self, headers=None, cookies=None):

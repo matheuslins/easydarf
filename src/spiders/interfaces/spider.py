@@ -1,4 +1,3 @@
-import asyncio
 from abc import ABCMeta, abstractmethod
 from aiohttp import web
 from http import HTTPStatus
@@ -12,6 +11,7 @@ class BaseSpider(web.View, metaclass=ABCMeta):
     response = None
     spider_name = None
     start_url = None
+    data = {}
 
     @abstractmethod
     def get_start_url(self):
@@ -43,6 +43,7 @@ class BaseSpider(web.View, metaclass=ABCMeta):
         await self.start_extract()
 
         return web.json_response({
-            "task": f"extract-data-{self.spider_name}",
-            "status": HTTPStatus.OK
+            'task': f"extract-data-{self.spider_name}",
+            'status': HTTPStatus.OK,
+            'data': self.data
         })

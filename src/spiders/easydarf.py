@@ -1,5 +1,5 @@
 from src.settings import SPIDERS_SETTINGS
-from src.core.spiders.easydarf import EasyDarfBusiness
+from src.core.spiders.easydarf.business import EasyDarfBusiness
 from src.core.logging import log
 from src.spiders.interfaces.spider import BaseSpider
 
@@ -34,6 +34,8 @@ class EasyDarfSpider(BaseSpider, EasyDarfBusiness):
 
     async def start_extract(self):
         await self.go_to_dashboard()
+        await self.go_to_carne_leao()
+        self.data = await self.create_new_yield()
 
     def save_item(self, file_name):
         pass

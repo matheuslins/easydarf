@@ -12,7 +12,6 @@ from src.utils.extract import extract_set_cookies
 
 class SpiderLoginInterface(RequestHandler):
 
-    session_cookies = {}
     login_params = {}
     login_data = {}
 
