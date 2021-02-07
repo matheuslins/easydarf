@@ -33,10 +33,7 @@ class EasyDarfSpider(BaseSpider, EasyDarfBusiness):
         await self.make_login()
 
     async def start_extract(self):
-        await self.consult_stores()
-        await self.extract_data()
-        self.save_item(file_name="instacart_items.json")
-        log.info(msg=f"{self.spider_name} - Saved all items!")
+        await self.go_to_dashboard()
 
     def save_item(self, file_name):
         pass

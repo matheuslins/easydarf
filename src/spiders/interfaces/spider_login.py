@@ -7,6 +7,7 @@ from src.core.captcha import CaptchaHandler
 from src.core.logging import log
 from src.settings import SPIDERS_SETTINGS, CAPTCHA
 from src.utils.format import format_cpf
+from src.utils.extract import extract_set_cookies
 
 
 class SpiderLoginInterface(RequestHandler):
@@ -18,18 +19,8 @@ class SpiderLoginInterface(RequestHandler):
     async def init_login(self, login_url):
         _ = await self.session(url=login_url, allow_redirects=False)
         response = self.get_response
-        headers = str(response.headers)
-
-        session_cookie = search(
-            r'(?<=Session_Gov_Br_Prod=)(.*?);', headers
-        ).group(1)
-        ingress_cookie = search(
-            r'(?<=INGRESSCOOKIE=)(.*?);', headers
-        ).group(1)
-
-        self.login_data['login_cookies'] = (
-            f'Session_Gov_Br_Prod={session_cookie}; '
-            f'INGRESSCOOKIE={ingress_cookie}'
+        self.login_data['login_cookies'] = extract_set_cookies(
+            self.get_response, ['Session_Gov_Br_Prod', 'INGRESSCOOKIE']
         )
         self.login_data['location'] = response.headers.get('location')
 
@@ -41,6 +32,15 @@ class SpiderLoginInterface(RequestHandler):
             f'&btnAvancarSenha=&sltProvider='
         )
 
+    def format_password_data(self):
+        cpf = format_cpf(SPIDERS_SETTINGS["easydarf"]["USERNAME"])
+        return (
+            f'_csrf={self.login_data["_csrf"]}'
+            f'&j_username={cpf}'
+            f'&j_password={SPIDERS_SETTINGS["easydarf"]["PASSWORD"]}'
+            f'&g-recaptcha-response={self.login_params["captcha"]}'
+        )
+
     @staticmethod
     def extract_site_key(response):
         selector = Selector(text=response)
@@ -49,31 +49,59 @@ class SpiderLoginInterface(RequestHandler):
             'button[@id="submit-button"]/@data-sitekey'
         ).extract_first()
 
-    async def login_username(self, init_url):
+    async def login_username(self):
         response = await self.session(
+            url=self.login_data['init_url'],
+            method="POST",
+            headers={
+                'content-type': 'application/x-www-form-urlencoded',
+            },
+            cookies=self.login_data['login_cookies'],
+            data=self.format_username_data()
+        )
+        self.login_data['site_key_captcha'] = self.extract_site_key(response)
+        self.login_data['captcha_url'] = str(self.login_data['init_url'])
+
+    async def login_password(self, init_url):
+        _ = await self.session(
             url=init_url,
             method="POST",
             headers={
                 'content-type': 'application/x-www-form-urlencoded',
-                'cookie': self.login_data['login_cookies']
             },
-            data=self.format_username_data()
+            cookies=self.login_data['login_cookies'],
+            data=self.format_password_data(),
+            allow_redirects=False
         )
-        self.login_data['site_key_captcha'] = self.extract_site_key(response)
-        self.login_data['captcha_url'] = str(init_url)
+        self.login_data['location'] = self.get_response.headers.get('location')
 
     async def follow_redirect(self):
         response = await self.session(
             url=self.login_data['location'],
-            headers={
-                'cookie': self.login_data['login_cookies']
-            }
+            cookies=self.login_data['login_cookies']
         )
         selector = Selector(text=response)
         self.login_data['_csrf'] = selector.xpath(
             '//form[@id="loginData"]//input[@name="_csrf"]/@value'
         ).extract_first()
         return self.get_response
+
+    async def authorize(self):
+        _ = await self.session(
+            url=self.login_data['location'],
+            cookies=self.login_data['login_cookies'],
+            allow_redirects=False
+        )
+        self.login_data['location'] = self.get_response.headers.get('location')
+
+    async def auth_login(self):
+        _ = await self.session(
+            url=self.login_data['location'],
+            allow_redirects=False
+        )
+        self.context['pos_login_cookies'] = extract_set_cookies(
+            self.get_response, ['ASP.NET_SessionId', 'COOKIECAV']
+        )
 
     async def start_login(self, response):
         selector = Selector(text=response)
@@ -83,7 +111,8 @@ class SpiderLoginInterface(RequestHandler):
 
         await self.init_login(login_url)
         init_response = await self.follow_redirect()
-        await self.login_username(init_response.url)
+        self.login_data['init_url'] = init_response.url
+        await self.login_username()
 
     async def make_login(self):
         log.info(msg="Spider captcha detected")
@@ -105,4 +134,6 @@ class SpiderLoginInterface(RequestHandler):
         log.info(msg=f"Captcha solved: {captcha_result}")
         self.login_params["captcha"] = captcha_result
 
-        response = self.session(url='')
+        await self.login_password(self.login_data['init_url'])
+        await self.authorize()
+        await self.auth_login()

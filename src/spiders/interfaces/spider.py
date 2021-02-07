@@ -40,8 +40,7 @@ class BaseSpider(web.View, metaclass=ABCMeta):
     async def run(self):
         await self.request_initial_page()
         await self.start_consult(self.response)
-
-        # _ = asyncio.create_task(self.start_extract())
+        await self.start_extract()
 
         return web.json_response({
             "task": f"extract-data-{self.spider_name}",
