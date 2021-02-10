@@ -1,9 +1,9 @@
+import requests
 from datetime import datetime, timedelta
 
 from src.core.request import RequestHandler
 from src.utils.extract import extract_current_year, extract_user_data
 from src.core.logging import log
-from src.settings import GRAPHQL, RENDIMENTOS_POR_INDICADOR
 
 
 class EasyDarfCarneLeao(RequestHandler):
@@ -137,179 +137,23 @@ class EasyDarfCarneLeao(RequestHandler):
             }
         )
 
-    async def go_to_graphql(self, query, type_arg):
-        _ = await self.session(
-            url=(
-                'https://www3.cav.receita.fazenda.gov.br/'
-                'carneleao/api/data/graphql'
-            ),
-            method='POST',
-            headers={
-                'Authorization': self.context['authorization']
-            },
-            cookies={
-                'COOKIECAV': self.context['pos_login_cookies']['COOKIECAV']
-            },
-            data={
-                "operationName": None,
-                "query": query,
-                "variables": {
-                    "exercicio": int(self.context['current_year']),
-                    **type_arg
-                }
-            }
-        )
-
-    async def go_to_compensacao(self):
-        _ = await self.session(
-            url=(
-                f'https://www3.cav.receita.fazenda.gov.br/carneleao/'
-                f'api/demonstrativo/compensacao/impostoPagoExterior/'
-                f'{self.context["current_year"]}/valorCompensacao'
-            ),
-            headers={
-                'Authorization': self.context['authorization']
-            },
-            cookies={
-                'COOKIECAV': self.context['pos_login_cookies']['COOKIECAV']
-            }
-        )
-
-    async def got_to_demonstrativo_by_id(self):
-        _ = await self.session(
-            url=(
-                f'https://www3.cav.receita.fazenda.gov.br/'
-                f'carneleao/api/demonstrativo/rendimento?'
-                f'idDemonstrativo={self.context["user_data"]["id"]}'
-            ),
-            headers={
-                'Authorization': self.context['authorization']
-            },
-            cookies={
-                'COOKIECAV': self.context['pos_login_cookies']['COOKIECAV']
-            }
-        )
-
     async def create_new_yield(self):
         await self.got_to_demonstrativo_a()
-        await self.go_to_graphql(
-            GRAPHQL['parametro']['query'],
-            GRAPHQL['parametro']['arg']
-        )
-        await self.go_to_user_id(1)
-        await self.got_to_demonstrativo_a()
-        await self.go_to_graphql(
-            GRAPHQL['parametro']['query'],
-            GRAPHQL['parametro']['arg']
-        )
-        await self.list_yields()
-        await self.go_to_graphql(
-            GRAPHQL['dominio']['query'],
-            GRAPHQL['dominio']['arg']
-        )
-        await self.go_to_graphql(
-            GRAPHQL['parametro']['query'],
-            GRAPHQL['parametro']['arg']
-        )
-        GRAPHQL['parametro']['arg']['tipoParametro'] = "pagamentos"
-        await self.go_to_graphql(
-            GRAPHQL['dominio']['query'],
-            GRAPHQL['dominio']['arg']
-        )
-        GRAPHQL['parametro']['arg']['tipoParametro'] = (
-            "rendimento-ordenacao-demonstrativo"
-        )
-        await self.go_to_graphql(
-            GRAPHQL['parametro']['query'],
-            GRAPHQL['parametro']['arg']
-        )
-        GRAPHQL['parametro']['arg']['tipoParametro'] = (
-            "pagamento-ordenacao-demonstrativo"
-        )
-        await self.go_to_graphql(
-            GRAPHQL['parametro']['query'],
-            GRAPHQL['parametro']['arg']
-        )
-        await self.go_to_compensacao()
-        await self.go_to_user_id(1)
-
-        GRAPHQL['parametro']['arg']['tipoParametro'] = "ajuda"
-        await self.go_to_graphql(
-            GRAPHQL['parametro']['query'],
-            GRAPHQL['parametro']['arg']
-        )
-        await self.go_to_user_id(1)
-
-        GRAPHQL['parametro']['arg']['tipoParametro'] = "ocupacao-rendimento"
-        await self.go_to_graphql(
-            GRAPHQL['parametro']['query'],
-            GRAPHQL['parametro']['arg']
-        )
-
-        GRAPHQL['parametro']['arg']['tipoParametro'] = "rendimentos"
-        await self.go_to_graphql(
-            GRAPHQL['parametro']['query'],
-            GRAPHQL['parametro']['arg']
-        )
-
-        GRAPHQL['dominio']['query'] = RENDIMENTOS_POR_INDICADOR
-        await self.go_to_graphql(
-            GRAPHQL['parametro']['query'],
-            GRAPHQL['parametro']['arg']
-        )
-
-        await self.got_to_demonstrativo_by_id()
-        await self.go_to_user_id(1)
-
-        GRAPHQL['parametro']['arg']['tipoParametro'] = "ajuda"
-        await self.go_to_graphql(
-            GRAPHQL['parametro']['query'],
-            GRAPHQL['parametro']['arg']
-        )
-
-        GRAPHQL['parametro']['arg']['tipoParametro'] = (
-            "rendimento-exibir-campos"
-        )
-        await self.go_to_graphql(
-            GRAPHQL['parametro']['query'],
-            GRAPHQL['parametro']['arg']
-        )
-
-        GRAPHQL['parametro']['arg']['tipoParametro'] = (
-            "obrigatoriedade-cpf-ocupacao"
-        )
-        await self.go_to_graphql(
-            GRAPHQL['parametro']['query'],
-            GRAPHQL['parametro']['arg']
-        )
-
-        GRAPHQL['parametro']['arg']['tipoParametro'] = (
-            "obrigatoriedade-cpf"
-        )
-        await self.go_to_graphql(
-            GRAPHQL['parametro']['query'],
-            GRAPHQL['parametro']['arg']
-        )
-
-        GRAPHQL['parametro']['arg']['tipoParametro'] = (
-            "obrigatoriedade-cnpj"
-        )
-        await self.go_to_graphql(
-            GRAPHQL['parametro']['query'],
-            GRAPHQL['parametro']['arg']
-        )
-
-        GRAPHQL['dominio']['query'] = RENDIMENTOS_POR_INDICADOR
-        await self.go_to_graphql(
-            GRAPHQL['dominio']['query'],
-            GRAPHQL['dominio']['arg']
-        )
 
         yield_created = {}
         now = (
-            datetime.now() + timedelta(hours=3)
+                datetime.now() + timedelta(hours=3)
         ).strftime('%Y-%m-%dT%H:%M:%S.%fZ')
         amount = 100
+
+        data = (
+            '{{"dataLancamento":"{now}","codigoOcupacao":"",'
+            '"codigoNatureza":"01.004.001","origemRecebimento":'
+            '"EXTERIOR","historico":"","tipoRendimento":"OUTROS_RENDIMENTOS",'
+            '"valorDeducao":0,"valorCheio":0,"valor":{amount},'
+            '"descricaoOcupacao":"","descricaoOcupacaoResumida":"",'
+            '"descricaoNatureza":"Outros"}}'
+        ).format(now=now, amount=amount)
 
         _ = await self.session(
             url=(
@@ -331,21 +175,9 @@ class EasyDarfCarneLeao(RequestHandler):
             cookies={
                 'COOKIECAV': self.context['pos_login_cookies']['COOKIECAV']
             },
-            data={
-                'dataLancamento': now,
-                'codigoOcupacao': '',
-                'codigoNatureza': '01.004.001',
-                'origemRecebimento': 'EXTERIOR',
-                'historico': 'Teste de rendimento!',
-                'tipoRendimento': 'OUTROS_RENDIMENTOS',
-                'valorDeducao': 0,
-                'valorCheio': 0,
-                'valor': amount,
-                'descricaoOcupacao': '',
-                'descricaoOcupacaoResumida': '',
-                'descricaoNatureza': 'Outros'
-            }
+            data=data
         )
+
         if self.get_response.status == 200:
             log.info(msg='New yield created!')
             yield_created.update({
