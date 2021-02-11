@@ -1,5 +1,4 @@
 
-COMPOSE_FILE = docker-compose
 .DEFAULT_GOAL := help
 
 .PHONY: help
@@ -8,57 +7,11 @@ help:  ## Shows this help message
 
 ##@ 🚀 Getting started
 
-.PHONY: build
-build: ## Build docker image including base dependencies
-	$(COMPOSE_FILE) build
+.PHONY: python
+run: ## Run a specific python module. Arguments: cmd=NAME-OF-THE-MODULE
+	python main.py
 
-.PHONY: external-net
-external-net: SERVICE_GRP_NET=service-grp-net
-external-net: ## Create common external docker network (if missing).
-	@# this network is shared across services and marked as external in docker-compose (thus not managed by it).
-	@if [ "$$(docker network ls --filter name=$(SERVICE_GRP_NET) --format '{{ .Name }}')" != $(SERVICE_GRP_NET) ]; then \
-		docker network create $(SERVICE_GRP_NET); \
-	fi
-
-.PHONY: up
-up: ## Boot up containers
-	$(COMPOSE_FILE) up -d
-	sleep 1
-	$(COMPOSE_FILE) ps
-
-.PHONY: down
-down: ## Stop containers
-	$(COMPOSE_FILE) down
-
-.PHONY: clean
-clean: ## Stop and delete containers and volumes (will cause data loss)
-	$(COMPOSE_FILE) down -v --remove-orphans
-
-##@ 🐞 Debugging
-
-.PHONY: logs
-logs: ## Show all containers logs
-	$(COMPOSE_FILE) logs -f
-
-.PHONY: bash
-bash: ## Attach to sh session in a scraper.api container
-	$(COMPOSE_FILE) run --rm easydarf sh
-
-.PHONY: redis
-redis: ## Run redis-cli in a redis container. Arguments: cmd=REDIS-COMMAND will run a specific command
-	$(COMPOSE_FILE) run --rm redis redis-cli -h redis ${cmd}
 
 .PHONY: python
-python: ## Run a specific python module. Arguments: cmd=NAME-OF-THE-MODULE
-	$(COMPOSE_FILE) run --rm easydarf python -m ${cmd}
-
-##@ 🛠  Testing and development
-
-.PHONY: recreate
-recreate: clean build external-net up  ## Make a new clean environment
-
-##@ 👷 Travis
-
-.PHONY: flake8
-flake8: ## Run flake8 linter
-	$(COMPOSE_FILE) run --no-deps --rm easydarf flake8 src
+exec: ## Run a specific python module. Arguments: cmd=NAME-OF-THE-MODULE
+	python -m ${cmd}

@@ -1,4 +1,3 @@
-import requests
 from datetime import datetime, timedelta
 
 from src.core.request import RequestHandler
@@ -21,25 +20,7 @@ class EasyDarfCarneLeao(RequestHandler):
                 'COOKIECAV': self.context['pos_login_cookies']['COOKIECAV']
             }
         )
-        await self.got_to_demonstrativo_a()
         await self.got_to_demonstrativo()
-
-    async def got_to_demonstrativo_a(self):
-        _ = await self.session(
-            url=(
-                'https://www3.cav.receita.fazenda.gov.br/'
-                'carneleao/api/demonstrativo/a'
-            ),
-            headers={
-                'Host': 'www3.cav.receita.fazenda.gov.br',
-                'Referer': (
-                    'https://www3.cav.receita.fazenda.gov.br/carneleao/login'
-                )
-            },
-            cookies={
-                'COOKIECAV': self.context['pos_login_cookies']['COOKIECAV']
-            }
-        )
 
     async def got_to_demonstrativo(self):
         response = await self.session(
@@ -85,25 +66,7 @@ class EasyDarfCarneLeao(RequestHandler):
         )
         self.context['current_year'] = extract_current_year(response)
 
-        await self.iterate_by_current_year()
-        await self.go_to_user_id(4)
-
-    async def iterate_by_current_year(self):
-        for _ in range(3):
-            _ = await self.session(
-                url=(
-                    f'https://www3.cav.receita.fazenda.gov.br/'
-                    f'carneleao/api/demonstrativo/anoCalendario/'
-                    f'{self.context["current_year"]}'
-                ),
-                method='POST',
-                headers={
-                    'Authorization': self.context['authorization']
-                },
-                cookies={
-                    'COOKIECAV': self.context['pos_login_cookies']['COOKIECAV']
-                }
-            )
+        await self.go_to_user_id(1)
 
     async def go_to_user_id(self, range_times):
         for _ in range(range_times):
@@ -122,24 +85,7 @@ class EasyDarfCarneLeao(RequestHandler):
             )
             self.context['user_data'].update(**await self.get_response.json())
 
-    async def list_yields(self):
-        _ = await self.session(
-            url=(
-                f'https://www3.cav.receita.fazenda.gov.br/'
-                f'carneleao/api/demonstrativo/calculado/'
-                f'{self.context["current_year"]}'
-            ),
-            headers={
-                'Authorization': self.context['authorization']
-            },
-            cookies={
-                'COOKIECAV': self.context['pos_login_cookies']['COOKIECAV']
-            }
-        )
-
     async def create_new_yield(self):
-        await self.got_to_demonstrativo_a()
-
         yield_created = {}
         now = (
                 datetime.now() + timedelta(hours=3)
