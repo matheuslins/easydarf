@@ -1,4 +1,6 @@
+import pytz
 from datetime import datetime, timedelta
+from base64 import b64encode
 
 from src.core.request import RequestHandler
 from src.utils.extract import extract_current_year, extract_user_data
@@ -134,5 +136,34 @@ class EasyDarfCarneLeao(RequestHandler):
         return await self.generate_new_darf(yield_created)
 
     async def generate_new_darf(self, yield_created):
-        return yield_created
+        month = '0'
+        current_month = datetime.now(
+            tz=pytz.timezone('America/Sao_Paulo')
+        ).month
+        mes_index = month if month else (current_month - 1)
 
+        _ = await self.session(
+            url=(
+                f'https://www3.cav.receita.fazenda.gov.br/carneleao/'
+                f'api/demonstrativo/darf/{self.context["current_year"]}'
+            ),
+            method="POST",
+            headers={
+                'Host': 'www3.cav.receita.fazenda.gov.br',
+                'Authorization': self.context['authorization'],
+                'Origin': 'https://www3.cav.receita.fazenda.gov.br',
+                'Content-Type': 'application/json',
+                'Referer': (
+                    'https://www3.cav.receita.fazenda.gov.br/'
+                    'carneleao/rendimentos/rendimento'
+                )
+            },
+            cookies={
+                'COOKIECAV': self.context['pos_login_cookies']['COOKIECAV']
+            },
+            data=f"{{\"mesIndex\":{mes_index}}}"
+        )
+        response = await self.get_response.json()
+        pdf = response['pdf']
+        yield_created.update({'pdf': pdf})
+        return yield_created
