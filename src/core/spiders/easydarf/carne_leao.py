@@ -1,6 +1,6 @@
 import pytz
 from datetime import datetime, timedelta
-from base64 import b64encode
+from http import HTTPStatus
 
 from src.core.request import RequestHandler
 from src.utils.extract import extract_current_year, extract_user_data
@@ -8,6 +8,8 @@ from src.core.logging import log
 
 
 class EasyDarfCarneLeao(RequestHandler):
+
+    yield_created = {}
 
     async def go_to_carne_leao(self):
         _ = await self.session(
@@ -88,7 +90,6 @@ class EasyDarfCarneLeao(RequestHandler):
             self.context['user_data'].update(**await self.get_response.json())
 
     async def create_new_yield(self):
-        yield_created = {}
         now = (
                 datetime.now() + timedelta(hours=3)
         ).strftime('%Y-%m-%dT%H:%M:%S.%fZ')
@@ -128,14 +129,14 @@ class EasyDarfCarneLeao(RequestHandler):
 
         if self.get_response.status == 200:
             log.info(msg='New yield created!')
-            yield_created.update({
+            self.yield_created.update({
                 'created_at': now,
                 'amount': amount
             })
 
-        return await self.generate_new_darf(yield_created)
+        return self.yield_created
 
-    async def generate_new_darf(self, yield_created):
+    async def generate_new_darf(self):
         month = '0'
         current_month = datetime.now(
             tz=pytz.timezone('America/Sao_Paulo')
@@ -163,7 +164,19 @@ class EasyDarfCarneLeao(RequestHandler):
             },
             data=f"{{\"mesIndex\":{mes_index}}}"
         )
-        response = await self.get_response.json()
-        pdf = response['pdf']
-        yield_created.update({'pdf': pdf})
-        return yield_created
+        response = self.get_response
+        if response.status == 400:
+            return {
+                'message': 'Darf indisponível',
+                'status': HTTPStatus.BAD_REQUEST,
+                'data': None
+            }
+        json_response = await response.json()
+        self.yield_created.update({
+            'message': 'Darf baixada com sucesso',
+            'status': HTTPStatus.OK,
+            'data': {
+                'pdf': json_response['pdf']
+            }
+        })
+        return self.yield_created

@@ -1,6 +1,5 @@
 from abc import ABCMeta, abstractmethod
 from aiohttp import web
-from http import HTTPStatus
 
 from src.core.request import RequestHandler
 from src.core.logging import log
@@ -41,9 +40,11 @@ class BaseSpider(web.View, metaclass=ABCMeta):
         await self.request_initial_page()
         await self.start_consult(self.response)
         await self.start_extract()
-
-        return web.json_response({
-            'task': f"extract-data-{self.spider_name}",
-            'status': HTTPStatus.OK,
-            'data': self.data
-        })
+        status = self.data.pop('status')
+        return web.json_response(
+            data={
+                'spider': f"{self.spider_name}",
+                **self.data
+            },
+            status=status
+        )

@@ -35,7 +35,9 @@ class EasyDarfSpider(BaseSpider, EasyDarfBusiness):
     async def start_extract(self):
         await self.go_to_dashboard()
         await self.go_to_carne_leao()
-        self.data = await self.create_new_yield()
+        if not self.request.query.get('operation') == 'download':
+            await self.create_new_yield()
+        self.data = await self.generate_new_darf()
 
     def save_item(self, file_name):
         pass
