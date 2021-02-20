@@ -122,9 +122,9 @@ class EasyDarfCarneLeao(RequestHandler):
         )
 
         if self.get_response.status == 200:
-            log.info(msg='New yield created!')
+            log.info(msg='New income created!')
             return {
-                'created_at': now,
+                'created_at': now_str,
                 'status': HTTPStatus.CREATED,
                 'message': 'Income created successfully',
                 'data': {
