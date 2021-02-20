@@ -1,10 +1,9 @@
-import pytz
-from datetime import datetime, timedelta
 from http import HTTPStatus
 
 from src.core.request import RequestHandler
 from src.utils.extract import extract_current_year, extract_user_data
 from src.core.logging import log
+from src.utils.datetime import now_datetime
 
 
 class EasyDarfCarneLeao(RequestHandler):
@@ -88,9 +87,7 @@ class EasyDarfCarneLeao(RequestHandler):
             self.context['user_data'].update(**await self.get_response.json())
 
     async def create_new_income(self, data) -> dict:
-        now = (
-            datetime.now() + timedelta(hours=3)
-        ).strftime('%Y-%m-%dT%H:%M:%S.%fZ')
+        now, now_str = now_datetime()
         amount = data['amount']
         data = (
             '{{"dataLancamento":"{now}","codigoOcupacao":"",'
@@ -99,7 +96,7 @@ class EasyDarfCarneLeao(RequestHandler):
             '"valorDeducao":0,"valorCheio":0,"valor":{amount},'
             '"descricaoOcupacao":"","descricaoOcupacaoResumida":"",'
             '"descricaoNatureza":"Outros"}}'
-        ).format(now=now, amount=amount)
+        ).format(now=now_str, amount=amount)
 
         _ = await self.session(
             url=(
@@ -143,13 +140,9 @@ class EasyDarfCarneLeao(RequestHandler):
         }
 
     async def generate_new_darf(self):
-        now = (
-            datetime.now() + timedelta(hours=3)
-        ).strftime('%Y-%m-%dT%H:%M:%S.%fZ')
+        now, now_str = now_datetime()
         month = '0'
-        current_month = datetime.now(
-            tz=pytz.timezone('America/Sao_Paulo')
-        ).month
+        current_month = now.month
         mes_index = month if month else (current_month - 1)
 
         _ = await self.session(
@@ -184,7 +177,7 @@ class EasyDarfCarneLeao(RequestHandler):
 
         json_response = await response.json()
         return {
-            'created_at': now,
+            'created_at': now_str,
             'status': HTTPStatus.CREATED,
             'message': 'Darf baixada com sucesso',
             'data': {
