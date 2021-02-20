@@ -1,6 +1,6 @@
-from src.spiders.interfaces.spider_login import SpiderLoginInterface
+from src.interfaces.spider_login import SpiderLoginInterface
 from src.utils.extract import extract_ecac_code, extract_imposto_renda_url
-from src.core.spiders.easydarf.carne_leao import EasyDarfCarneLeao
+from src.spiders.easydarf.carne_leao import EasyDarfCarneLeao
 from src.settings import SPIDERS_SETTINGS
 
 

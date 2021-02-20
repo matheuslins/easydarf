@@ -9,8 +9,6 @@ from src.core.logging import log
 
 class EasyDarfCarneLeao(RequestHandler):
 
-    yield_created = {}
-
     async def go_to_carne_leao(self):
         _ = await self.session(
             url='https://www3.cav.receita.fazenda.gov.br/carneleao/',
@@ -89,12 +87,11 @@ class EasyDarfCarneLeao(RequestHandler):
             )
             self.context['user_data'].update(**await self.get_response.json())
 
-    async def create_new_yield(self):
+    async def create_new_income(self, data) -> dict:
         now = (
-                datetime.now() + timedelta(hours=3)
+            datetime.now() + timedelta(hours=3)
         ).strftime('%Y-%m-%dT%H:%M:%S.%fZ')
-        amount = 100
-
+        amount = data['amount']
         data = (
             '{{"dataLancamento":"{now}","codigoOcupacao":"",'
             '"codigoNatureza":"01.004.001","origemRecebimento":'
@@ -129,14 +126,26 @@ class EasyDarfCarneLeao(RequestHandler):
 
         if self.get_response.status == 200:
             log.info(msg='New yield created!')
-            self.yield_created.update({
+            return {
                 'created_at': now,
-                'amount': amount
-            })
+                'status': HTTPStatus.CREATED,
+                'message': 'Income created successfully',
+                'data': {
+                    'amount': amount
+                }
+            }
 
-        return self.yield_created
+        return {
+            'created_at': None,
+            'status': HTTPStatus.BAD_REQUEST,
+            'message': 'Cannot create income',
+            'data': {}
+        }
 
     async def generate_new_darf(self):
+        now = (
+            datetime.now() + timedelta(hours=3)
+        ).strftime('%Y-%m-%dT%H:%M:%S.%fZ')
         month = '0'
         current_month = datetime.now(
             tz=pytz.timezone('America/Sao_Paulo')
@@ -167,16 +176,18 @@ class EasyDarfCarneLeao(RequestHandler):
         response = self.get_response
         if response.status == 400:
             return {
-                'message': 'Darf indisponível',
+                'created_at': None,
                 'status': HTTPStatus.BAD_REQUEST,
-                'data': None
+                'message': 'Darf indisponível',
+                'data': {}
             }
+
         json_response = await response.json()
-        self.yield_created.update({
+        return {
+            'created_at': now,
+            'status': HTTPStatus.CREATED,
             'message': 'Darf baixada com sucesso',
-            'status': HTTPStatus.OK,
             'data': {
                 'pdf': json_response['pdf']
             }
-        })
-        return self.yield_created
+        }

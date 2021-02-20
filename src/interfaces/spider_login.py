@@ -1,4 +1,3 @@
-from re import search
 from twocaptcha import TwoCaptcha
 from scrapy import Selector
 
@@ -25,20 +24,21 @@ class SpiderLoginInterface(RequestHandler):
 
     def format_username_data(self):
         cpf = format_cpf(SPIDERS_SETTINGS["easydarf"]["USERNAME"])
-        return (
-            f'_csrf={self.login_data["_csrf"]}'
-            f'&j_username={cpf}'
-            f'&btnAvancarSenha=&sltProvider='
-        )
+        return {
+            "_csrf": self.login_data['_csrf'],
+            "accountId": cpf,
+            "action": "enterAccountId"
+        }
 
     def format_password_data(self):
         cpf = format_cpf(SPIDERS_SETTINGS["easydarf"]["USERNAME"])
-        return (
-            f'_csrf={self.login_data["_csrf"]}'
-            f'&j_username={cpf}'
-            f'&j_password={SPIDERS_SETTINGS["easydarf"]["PASSWORD"]}'
-            f'&g-recaptcha-response={self.login_params["captcha"]}'
-        )
+        return {
+            '_csrf': self.login_data['_csrf'],
+            'accountId': cpf,
+            'password': SPIDERS_SETTINGS['easydarf']['PASSWORD'],
+            'g-recaptcha-response': self.login_params["captcha"],
+            'action': 'enterPassword'
+        }
 
     @staticmethod
     def extract_site_key(response):

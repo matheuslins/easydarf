@@ -16,40 +16,6 @@ SPIDERS_SETTINGS = {
         'API_INIT_URL': (
             'https://www3.cav.receita.fazenda.gov.br/'
             'extratodirpf/api/appinit/ecac'
-        ),
-        'graphql': {
-
-        }
+        )
     }
 }
-
-GRAPHQL = {
-    'parametro': {
-        'query': (
-            "query ($exercicio: Int!, $tipoParametro: String!) "
-            "{\n  parametro(exercicio: $exercicio, tipoParametro: "
-            "$tipoParametro) {\n    conteudo\n    __typename\n  }\n}\n"
-        ),
-        'arg': {
-            "tipoParametro": "ajuda"
-        }
-    },
-    'dominio': {
-        'query': (
-            "query ($exercicio: Int!, $tipoDominio: String!) "
-            "{\n  dominio(exercicio: $exercicio, tipoDominio: "
-            "$tipoDominio) {\n    conteudo\n    __typename\n  }\n}\n"
-        ),
-        'arg': {
-            "tipoDominio": "rendimentos"
-        }
-    }
-}
-
-RENDIMENTOS_POR_INDICADOR = (
-    "query ($exercicio: Int!, $tipoDominio: String!) {\n  "
-    "dominio(exercicio: $exercicio, tipoDominio: $tipoDominio) "
-    "{\n    rendimentosPorIndicadorRendimentoTrabalho(anoExercicio: "
-    "$exercicio, indicador:\"N\") {\n      nodes\n      __typename\n "
-    "   }\n    __typename\n  }\n}\n"
-)
