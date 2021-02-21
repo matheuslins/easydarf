@@ -139,11 +139,11 @@ class EasyDarfCarneLeao(RequestHandler):
             'data': {}
         }
 
-    async def generate_new_darf(self):
+    async def generate_new_darf(self, data):
         now, now_str = now_datetime()
-        month = '0'
+        month = data['month']
         current_month = now.month
-        mes_index = month if month else (current_month - 1)
+        mes_index = (month - 1) if month else (current_month - 1)
 
         _ = await self.session(
             url=(

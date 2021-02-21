@@ -1,7 +1,12 @@
+from http import HTTPStatus
+
+from pydantic import ValidationError
+
 from src.settings import SPIDERS_SETTINGS
 from src.spiders.easydarf.business import EasyDarfBusiness
 from src.interfaces.spider import BaseSpider
 from src.core.logging import log
+from src.interfaces.schemas.easydarf.income import IncomeSchema
 
 
 class IncomeSpider(BaseSpider, EasyDarfBusiness):
@@ -13,7 +18,17 @@ class IncomeSpider(BaseSpider, EasyDarfBusiness):
         self.set_login_params()
 
     async def post(self):
-        return await self.run()
+        data = await self.request.json()
+        try:
+            valid_data = IncomeSchema(**data, skip_on_failure=True)
+            self.req_data = valid_data.dict()
+            return await self.run()
+        except ValidationError as e:
+            self.data = {
+                'errors': e.errors(),
+                'data': {}
+            }
+            return await self.error(HTTPStatus.UNPROCESSABLE_ENTITY)
 
     def get_start_url(self):
         return self.start_url

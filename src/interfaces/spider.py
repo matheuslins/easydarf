@@ -12,6 +12,7 @@ class BaseSpider(web.View, metaclass=ABCMeta):
     spider_name = None
     start_url = None
     data = {}
+    req_data = {}
 
     @abstractmethod
     def get_start_url(self):
@@ -42,6 +43,15 @@ class BaseSpider(web.View, metaclass=ABCMeta):
         await self.start_consult(self.response)
         await self.start_extract()
         status = self.data.pop('status')
+        return web.json_response(
+            data={
+                'spider': f"{self.spider_name}",
+                **self.data
+            },
+            status=status
+        )
+
+    async def error(self, status):
         return web.json_response(
             data={
                 'spider': f"{self.spider_name}",

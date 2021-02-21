@@ -1,7 +1,12 @@
+from http import HTTPStatus
+
+from pydantic import ValidationError
+
 from src.settings import SPIDERS_SETTINGS
 from src.spiders.easydarf.business import EasyDarfBusiness
 from src.interfaces.spider import BaseSpider
 from src.core.logging import log
+from src.interfaces.schemas.easydarf.darf import DarfSchema
 
 
 class DarfSpider(BaseSpider, EasyDarfBusiness):
@@ -14,7 +19,17 @@ class DarfSpider(BaseSpider, EasyDarfBusiness):
         self.set_login_params()
 
     async def post(self):
-        return await self.run()
+        data = await self.request.json()
+        try:
+            valid_data = DarfSchema(**data, skip_on_failure=True)
+            self.req_data = valid_data.dict()
+            return await self.run()
+        except ValidationError as e:
+            self.data = {
+                'errors': e.errors(),
+                'data': {}
+            }
+            return await self.error(HTTPStatus.UNPROCESSABLE_ENTITY)
 
     def get_start_url(self):
         return self.start_url
@@ -35,7 +50,7 @@ class DarfSpider(BaseSpider, EasyDarfBusiness):
     async def start_extract(self):
         await self.go_to_dashboard()
         await self.go_to_carne_leao()
-        self.data = await self.generate_new_darf()
+        self.data = await self.generate_new_darf(self.req_data)
 
     def save_item(self, file_name):
         pass
