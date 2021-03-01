@@ -4,6 +4,7 @@ from src.core.request import RequestHandler
 from src.utils.extract import extract_current_year, extract_user_data
 from src.core.logging import log
 from src.utils.datetime import now_datetime, convert_str_datetime
+from src.utils.external import save_pdf
 
 
 class EasyDarfCarneLeao(RequestHandler):
@@ -179,11 +180,15 @@ class EasyDarfCarneLeao(RequestHandler):
             }
 
         json_response = await response.json()
+        pdf = json_response['pdf']
+
+        save_pdf(pdf, month)
+
         return {
             'created_at': now_str,
             'status': HTTPStatus.CREATED,
             'message': 'Darf baixada com sucesso',
             'data': {
-                'pdf': json_response['pdf']
+                'pdf': pdf
             }
         }
