@@ -3,7 +3,7 @@ from http import HTTPStatus
 from src.core.request import RequestHandler
 from src.utils.extract import extract_current_year, extract_user_data
 from src.core.logging import log
-from src.utils.datetime import now_datetime
+from src.utils.datetime import now_datetime, convert_str_datetime
 
 
 class EasyDarfCarneLeao(RequestHandler):
@@ -86,17 +86,22 @@ class EasyDarfCarneLeao(RequestHandler):
             )
             self.context['user_data'].update(**await self.get_response.json())
 
-    async def create_new_income(self, data) -> dict:
+    async def create_new_income(self, req_data: dict) -> dict:
         now, now_str = now_datetime()
-        amount = data['amount']
+        if req_data.get('release_date'):
+            now_str = convert_str_datetime(req_data['release_date'])
+
+        req_data.update({'now': now_str})
+
         data = (
             '{{"dataLancamento":"{now}","codigoOcupacao":"",'
             '"codigoNatureza":"01.004.001","origemRecebimento":'
-            '"EXTERIOR","historico":"","tipoRendimento":"OUTROS_RENDIMENTOS",'
+            '"EXTERIOR","historico":"{description}",'
+            '"tipoRendimento":"OUTROS_RENDIMENTOS",'
             '"valorDeducao":0,"valorCheio":0,"valor":{amount},'
             '"descricaoOcupacao":"","descricaoOcupacaoResumida":"",'
             '"descricaoNatureza":"Outros"}}'
-        ).format(now=now_str, amount=amount)
+        ).format(**req_data)
 
         _ = await self.session(
             url=(
@@ -127,9 +132,7 @@ class EasyDarfCarneLeao(RequestHandler):
                 'created_at': now_str,
                 'status': HTTPStatus.CREATED,
                 'message': 'Income created successfully',
-                'data': {
-                    'amount': amount
-                }
+                'data': req_data
             }
 
         return {

@@ -1,3 +1,4 @@
+from json import JSONDecodeError
 from http import HTTPStatus
 
 from pydantic import ValidationError
@@ -19,7 +20,14 @@ class DarfSpider(BaseSpider, EasyDarfBusiness):
         self.set_login_params()
 
     async def post(self):
-        data = await self.request.json()
+        try:
+            data = await self.request.json()
+        except JSONDecodeError as e:
+            self.data = {
+                'errors': e.args,
+                'data': {}
+            }
+            return await self.error(HTTPStatus.BAD_REQUEST)
         try:
             valid_data = DarfSchema(**data, skip_on_failure=True)
             self.req_data = valid_data.dict()
